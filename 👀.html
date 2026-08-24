@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Radar Errori di Quota</title>
+<style>
+:root{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color-scheme:dark;
+  --bg:#0b1020;--card:#121a2b;--card2:#0a111e;--line:#27334b;--text:#f6f7fb;
+  --muted:#9aa7bd;--good:#4ade80;--warn:#facc15;--accent:#60a5fa;--danger:#f87171;
+  --error-bg:rgba(74,222,128,0.08);--error-border:rgba(74,222,128,0.45)
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  margin:0;background:linear-gradient(180deg,#09101d,#0b1020);
+  color:var(--text);font-size:14px;min-height:100vh;
+  padding-bottom:calc(85px + env(safe-area-inset-bottom))
+}
+.app{max-width:980px;margin:auto;padding:12px 14px}
+.top{
+  position:sticky;top:0;z-index:20;
+  background:rgba(11,16,32,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  padding:calc(8px + env(safe-area-inset-top)) 0 10px;
+  border-bottom:1px solid rgba(39,51,75,.5)
+}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.logo{font-size:19px;font-weight:900;letter-spacing:-.02em}
+.muted{color:var(--muted);font-size:13px}.tiny{font-size:11px;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px;margin:12px 0}
+.layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:14px;margin-top:12px}
+.sidebar{
+  position:sticky;top:85px;align-self:start;
+  background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:12px;max-height:calc(100vh - 110px);overflow-y:auto;-webkit-overflow-scrolling:touch
+}
+.sidebar h3{margin:4px 0 10px;font-size:15px}
+.leagueBtn{display:flex;width:100%;justify-content:space-between;align-items:center;text-align:left;margin:4px 0;padding:9px 10px;border-radius:10px}
+.leagueBtn.active{border-color:var(--accent);background:#16213a}.leagueCount{font-size:11px;color:var(--muted)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px}
+.stat{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+
+button,input,select{
+  font:inherit;border:1px solid var(--line);background:var(--card2);
+  color:var(--text);border-radius:12px;padding:10px 12px;
+  -webkit-appearance:none;appearance:none
+}
+button{font-weight:800;cursor:pointer}
+button:active{opacity:0.8}
+button.primary{background:var(--text);color:#0b1020;border-color:var(--text)}
+button.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+input,select{width:100%}.small{width:auto;padding:7px 10px;font-size:12px}
+.big{font-size:18px;font-weight:900}
+
+.pill{border:1px solid var(--line);border-radius:999px;padding:4px 9px;font-size:11px;font-weight:800;color:var(--muted)}
+.pill.good{color:var(--good);border-color:var(--good);background:rgba(74,222,128,0.1)}
+.pill.warn{color:var(--warn);border-color:var(--warn);background:rgba(250,204,21,0.1)}
+.good{color:var(--good)}.warn{color:var(--warn)}.danger{color:var(--danger)}.hide{display:none !important}
+
+/* BOX ERRORE DI QUOTA */
+.error-box{
+  background:var(--error-bg);
+  border:1.5px solid var(--error-border);
+  border-radius:14px;
+  padding:14px;
+  margin:12px 0;
+  box-shadow:0 4px 18px rgba(0,0,0,0.25)
+}
+.error-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.error-badge{
+  background:var(--good);color:#07120a;
+  font-weight:900;font-size:12px;padding:4px 10px;
+  border-radius:999px;white-space:nowrap
+}
+.book-link{
+  display:inline-flex;align-items:center;gap:6px;
+  background:#1d2b45;border:1px solid var(--accent);
+  color:var(--accent);padding:9px 13px;border-radius:10px;
+  font-weight:800;text-decoration:none;font-size:13px;margin-top:10px
+}
+.match{padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
+.match:first-child{border-top:0}
+.teams{font-weight:900;font-size:15px}.time{color:var(--muted);font-size:12px}
+.badge{border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900;border:1px solid var(--line)}
+.badge.good{color:var(--good);border-color:var(--good)}
+.drawerOverlay{display:none;pointer-events:none}
+
+.bottomnav{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  background:rgba(9,16,29,.95);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-top:1px solid var(--line);
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom))
+}
+.bottomnav .inner{max-width:980px;margin:auto;display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.bottomnav button{font-size:13px;padding:10px 4px}
+.bottomnav button.active{border-color:var(--accent);background:#16213a}
+.section-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:900;margin-top:12px;margin-bottom:6px}
+.marketCard{padding:9px 0;border-top:1px solid var(--line)}
+.marketCard:first-child{border-top:0}
+
+@media(max-width:760px){
+ .layout{display:block}
+ .mobileOnly{display:inline-flex}
+ .sidebar{
+   position:fixed;top:0;left:0;height:100dvh;bottom:auto;width:min(86vw,320px);
+   max-height:100dvh;z-index:50;border-radius:0 16px 16px 0;
+   transform:translateX(-105%);transition:transform .22s ease-out;
+   padding-top:calc(16px + env(safe-area-inset-top));
+   padding-bottom:calc(20px + env(safe-area-inset-bottom))
+ }
+ .sidebar.open{transform:translateX(0)}
+ .drawerOverlay{display:block;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:49;opacity:0;pointer-events:none;transition:opacity .22s}
+ .drawerOverlay.open{opacity:1;pointer-events:auto}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand">
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="small mobileOnly" id="btn-menu" type="button">☰</button>
+        <div>
+          <div class="logo">🎯 Radar Errori di Quota</div>
+          <div class="tiny" style="color:var(--good)">Solo esiti probabili (≥ 48%) con EV ≥ +4%</div>
+        </div>
+      </div>
+      <span id="conn" class="pill good">ATTIVO</span>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="row">
+      <div class="big">Feed Quote Reali</div>
+      <button class="small" id="btn-toggle-config" type="button">Configura API ⚙</button>
+    </div>
+    <div id="configSection" class="hide" style="margin-top:10px">
+      <input id="apiKey" type="password" placeholder="Incolla qui l'API Key di Odds-API.io">
+      <div class="grid2" style="margin-top:8px">
+        <select id="book1"><option selected>Bet365</option><option>Sisal IT</option><option>Betano</option><option>Unibet</option><option>Snai</option></select>
+        <select id="book2"><option>Bet365</option><option selected>Sisal IT</option><option>Betano</option><option>Unibet</option><option>Snai</option></select>
+      </div>
+      <button class="primary" style="width:100%;margin-top:9px" id="btn-save-load" type="button">CARICA DATI REALI</button>
+    </div>
+    <div id="msg" class="tiny" style="margin-top:7px;color:var(--muted)">Partite caricate. Tocca un match per calcolare gli errori di quota.</div>
+  </section>
+
+  <div id="overlay" class="drawerOverlay"></div>
+
+  <div class="layout">
+    <aside id="side" class="sidebar">
+      <div class="row" style="position:sticky;top:0;background:var(--card);z-index:2;padding:2px 0 8px">
+        <h3>Campionati</h3><button class="small mobileOnly" id="btn-close-side" type="button">✕</button>
+      </div>
+      <button id="lg-all" class="leagueBtn active" type="button"><span>Tutti i campionati</span><span id="cnt-all" class="leagueCount"></span></button>
+      <div id="leagueMenu"></div>
+    </aside>
+
+    <main>
+      <section id="view-partite">
+        <div class="card">
+          <div class="row">
+            <div><div class="big">Palinsesto Partite</div><div id="leagueLabel" class="muted">Tutti i campionati</div></div>
+            <button class="small" id="btn-reload" type="button">↻ Ricarica</button>
+          </div>
+          <div class="grid3" style="margin-top:10px">
+            <button id="h24" class="active" type="button">24 ore</button>
+            <button id="h48" type="button">48 ore</button>
+            <button id="btn-top-view" type="button">⭐ Top Errori</button>
+          </div>
+          <input id="search" style="margin-top:10px" placeholder="Cerca squadra…">
+        </div>
+        <div class="card">
+          <div id="matches"></div>
+        </div>
+      </section>
+
+      <section id="view-analisi" class="hide">
+        <div class="card">
+          <button class="small" id="btn-back" type="button">← Torna alle Partite</button>
+          <div id="aLeague" class="muted" style="margin-top:12px"></div>
+          <div id="aTeams" class="big" style="font-size:22px;margin-top:4px"></div>
+          <div id="aTime" class="muted"></div>
+        </div>
+
+        <div class="card" style="border-color:rgba(74,222,128,0.4)">
+          <div class="row">
+            <div>
+              <div class="big" style="color:var(--good)">🚨 Errori di Quota Identificati</div>
+              <div class="tiny">Quote sbilanciate su esiti con alta probabilità reale (≥ 48%).</div>
+            </div>
+            <span id="aCount" class="pill good">0 errori</span>
+          </div>
+          <div id="aErrorsList" style="margin-top:12px"></div>
+        </div>
+
+        <details class="card">
+          <summary><b>Tutti gli altri mercati analizzati</b></summary>
+          <div id="aAllMarkets" style="margin-top:10px"></div>
+        </details>
+      </section>
+
+      <section id="view-top" class="hide">
+        <div class="card">
+          <div class="row"><div class="big">Top Errori di Quota</div><span class="pill good">Miglior EV</span></div>
+          <div class="muted" style="margin-top:6px">Partite con le migliori opportunità di valore matematico.</div>
+          <div id="tops" style="margin-top:10px"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div class="bottomnav">
+  <div class="inner">
+    <button id="nav-partite" class="active" type="button">⚽ Partite</button>
+    <button id="nav-top" type="button">⭐ Top Errori</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  // Safe Storage wrapper contro i blocchi di sandbox su mobile
+  var memStore = {};
+  var safeStorage = {
+    get: function(k) { try { return localStorage.getItem(k); } catch(e) { return memStore[k] || ""; } },
+    set: function(k, v) { try { localStorage.setItem(k, v); } catch(e) { memStore[k] = v; } }
+  };
+
+  var $ = function(id){ return document.getElementById(id); };
+  var API = "https://api.odds-api.io/v3";
+  var hours = 24, selectedLeague = "", events = [], usingReal = false;
+
+  var demoMatches = [
+    {id:"d1", league:{name:"Serie A"}, home:"Inter", away:"Lazio", date:new Date(Date.now()+4*3600000).toISOString(), demo:true},
+    {id:"d2", league:{name:"Premier League"}, home:"Arsenal", away:"Everton", date:new Date(Date.now()+6*3600000).toISOString(), demo:true},
+    {id:"d3", league:{name:"La Liga"}, home:"Real Madrid", away:"Valencia", date:new Date(Date.now()+9*3600000).toISOString(), demo:true},
+    {id:"d4", league:{name:"Bundesliga"}, home:"Bayern Monaco", away:"Mainz", date:new Date(Date.now()+14*3600000).toISOString(), demo:true}
+  ];
+
+  $("apiKey").value = safeStorage.get("fcKey") || "";
+  $("book1").value = safeStorage.get("fcB1") || "Bet365";
+  $("book2").value = safeStorage.get("fcB2") || "Sisal IT";
+
+  function esc(s){ return String(s || "").replace(/[&<>"']/g, function(m){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]; }); }
+  function openMenu(){ $("side").classList.add("open"); $("overlay").classList.add("open"); }
+  function closeMenu(){ $("side").classList.remove("open"); $("overlay").classList.remove("open"); }
+  function leagueName(e){ return (e.league && e.league.name) ? e.league.name : (e.league || "Altri campionati"); }
+  function inWindow(e){ var t = new Date(e.date).getTime(); return t >= Date.now() && t <= (Date.now() + hours * 3600000); }
+
+  function setHours(h){
+    hours = h;
+    $("h24").className = (h === 24 ? "active" : "");
+    $("h48").className = (h === 48 ? "active" : "");
+    renderAll();
+  }
+
+  function selectLeague(n){
+    selectedLeague = n;
+    $("leagueLabel").textContent = n || "Tutti i campionati";
+    setView("partite");
+    renderAll();
+    closeMenu();
+  }
+
+  function setView(v){
+    var views = ["partite", "analisi", "top"];
+    for (var i = 0; i < views.length; i++) {
+      var name = views[i];
+      var el = $("view-" + name);
+      if (el) el.className = (name === v ? "" : "hide");
+      var nav = $("nav-" + name);
+      if (nav) nav.className = (name === v ? "active" : "");
+    }
+    if (v === "top") renderTopView();
+    window.scrollTo(0, 0);
+  }
+
+  function factorial(n){ var f = 1; for(var i = 2; i <= n; i++) f *= i; return f; }
+  function poisson(k, l){ return Math.exp(-l) * Math.pow(l, k) / factorial(k); }
+
+  function tau(x, y, lh, la, rho){
+    if (rho === undefined) rho = -0.08;
+    if (x === 0 && y === 0) return 1 - (lh * la * rho);
+    if (x === 0 && y === 1) return 1 + (lh * rho);
+    if (x === 1 && y === 0) return 1 + (la * rho);
+    if (x === 1 && y === 1) return 1 - rho;
+    return 1.0;
+  }
+
+  function buildMatrix(lh, la){
+    var M = [], sum = 0;
+    for(var h = 0; h <= 8; h++){
+      M[h] = [];
+      for(var a = 0; a <= 8; a++){
+        var p = tau(h, a, lh, la, -0.08) * poisson(h, lh) * poisson(a, la);
+        p = Math.max(0, p);
+        M[h][a] = p;
+        sum += p;
+      }
+    }
+    for(var h2 = 0; h2 <= 8; h2++){
+      for(var a2 = 0; a2 <= 8; a2++){
+        M[h2][a2] /= sum;
+      }
+    }
+    return M;
+  }
+
+  function sumM(M, fn){
+    var z = 0;
+    for(var h = 0; h < M.length; h++){
+      for(var a = 0; a < M[h].length; a++){
+        if(fn(h, a)) z += M[h][a];
+      }
+    }
+    return z;
+  }
+
+  function isFullTimeMarket(m){
+    var x = String(m || "").toLowerCase();
+    if (/\bht\b|half|1st|2nd|first|second|corner|card|booking|scorer|player|points/i.test(x)) return false;
+    return true;
+  }
+
+  function calculateFairProb(m, s, line, M){
+    if (!isFullTimeMarket(m)) return null;
+    var x = String(m || "").toLowerCase();
+    s = String(s || "").toLowerCase();
+    var L = Number(line);
+
+    if(/1x2|match winner|moneyline|full time result|^ml$/.test(x)){
+      if(/home|^1$/.test(s)) return sumM(M, function(h,a){ return h > a; });
+      if(/draw|^x$/.test(s)) return sumM(M, function(h,a){ return h === a; });
+      if(/away|^2$/.test(s)) return sumM(M, function(h,a){ return h < a; });
+    }
+    if(/both teams.*score|btts/.test(x)){
+      var b = sumM(M, function(h,a){ return h > 0 && a > 0; });
+      return /yes|si|sì/.test(s) ? b : 1 - b;
+    }
+    if(/total goals|totals|over.*under/.test(x) && Number.isFinite(L)){
+      if(L % 0.5 !== 0) return null;
+      var ov = sumM(M, function(h,a){ return (h + a) > L; });
+      return /over/.test(s) ? ov : 1 - ov;
+    }
+    if(/double chance/.test(x)){
+      if(/1x/.test(s)) return sumM(M, function(h,a){ return h >= a; });
+      if(/x2/.test(s)) return sumM(M, function(h,a){ return h <= a; });
+      if(/12/.test(s)) return sumM(M, function(h,a){ return h !== a; });
+    }
+    if(/draw no bet|dnb/.test(x)){
+      var ph = sumM(M, function(h,a){ return h > a; });
+      var pa = sumM(M, function(h,a){ return h < a; });
+      return /home|^1$/.test(s) ? ph/(ph+pa) : pa/(ph+pa);
+    }
+    return null;
+  }
+
+  function flattenOdds(raw){
+    var out = [];
+    var obj = (raw && raw.bookmakers) ? raw.bookmakers : ((raw && raw.data && raw.data.bookmakers) ? raw.data.bookmakers : (Array.isArray(raw) ? raw : {}));
+    var urls = (raw && raw.urls) ? raw.urls : ((raw && raw.data && raw.data.urls) ? raw.data.urls : {});
+    var bookEntries = Array.isArray(obj) ? obj.map(function(b){ return [b.name || b.bookmaker, b.markets || []]; }) : Object.entries(obj);
+
+    for(var i = 0; i < bookEntries.length; i++){
+      var book = bookEntries[i][0];
+      var markets = bookEntries[i][1];
+      if(!Array.isArray(markets)) continue;
+      var directEventUrl = urls[book] || null;
+
+      for(var j = 0; j < markets.length; j++){
+        var mk = markets[j];
+        var name = mk.name || mk.market || mk.key || "Mercato";
+        var baseLine = (mk.hdp !== undefined) ? mk.hdp : ((mk.line !== undefined) ? mk.line : mk.total);
+        var os = mk.odds || mk.outcomes || mk.selections || [];
+        if(!Array.isArray(os)) os = [os];
+
+        for(var k = 0; k < os.length; k++){
+          var o = os[k];
+          var ln = (o.hdp !== undefined) ? o.hdp : ((o.line !== undefined) ? o.line : ((o.total !== undefined) ? o.total : baseLine));
+          var eventUrl = o.url || mk.url || directEventUrl;
+
+          var keys = ["home","draw","away","over","under","yes","no","1","X","2"];
+          for(var z = 0; z < keys.length; z++){
+            var key = keys[z];
+            var q = Number(o[key]);
+            if(q > 1) out.push({ book: book, market: name, sel: key, line: ln, odds: q, eventUrl: eventUrl });
+          }
+          var label = o.name || o.label || o.selection;
+          var val = Number(o.price || o.value || (typeof o.odds !== "object" ? o.odds : null));
+          if(label && val > 1) out.push({ book: book, market: name, sel: label, line: ln, odds: val, eventUrl: eventUrl });
+        }
+      }
+    }
+    return out;
+  }
+
+  function getDemoOddsForMatch(e){
+    var lh = 1.95, la = 1.05;
+    var M = buildMatrix(lh, la);
+    var p1 = sumM(M, function(h,a){ return h > a; });
+    var px = sumM(M, function(h,a){ return h === a; });
+    var pov15 = sumM(M, function(h,a){ return (h + a) > 1.5; });
+    var pbtts = sumM(M, function(h,a){ return h > 0 && a > 0; });
+
+    return [
+      { book: "Bet365", market: "Esito Finale 1X2", sel: "1", line: null, odds: +( (1/p1) * 1.11 ).toFixed(2), eventUrl: "https://www.bet365.it" },
+      { book: "Sisal IT", market: "Doppia Chance", sel: "1X", line: null, odds: +( (1/(p1+px)) * 1.08 ).toFixed(2), eventUrl: "https://www.sisal.it/scommesse-matchpoint" },
+      { book: "Bet365", market: "Totale Gol", sel: "Over", line: 1.5, odds: +( (1/pov15) * 1.07 ).toFixed(2), eventUrl: "https://www.bet365.it" },
+      { book: "Sisal IT", market: "Goal / NoGoal", sel: "Sì", line: null, odds: +( (1/pbtts) * 1.09 ).toFixed(2), eventUrl: "https://www.sisal.it/scommesse-matchpoint" },
+      { book: "Bet365", market: "Esito Finale 1X2", sel: "X", line: null, odds: +( (1/px) * 0.95 ).toFixed(2), eventUrl: "https://www.bet365.it" }
+    ];
+  }
+
+  window.analyzeMatch = async function(idx){
+    var e = events[idx];
+    if(!e) return;
+    setView("analisi");
+    $("aLeague").textContent = leagueName(e);
+    $("aTeams").textContent = e.home + " — " + e.away;
+    $("aTime").textContent = new Date(e.date).toLocaleString("it-IT");
+    $("aErrorsList").innerHTML = '<p class="muted">Scansione delle quote in corso…</p>';
+    $("aAllMarkets").innerHTML = "";
+
+    var lh = 1.65, la = 1.10;
+    if(e.home.indexOf("Inter") !== -1) { lh = 2.05; la = 0.95; }
+    if(e.home.indexOf("Arsenal") !== -1) { lh = 2.15; la = 0.75; }
+    if(e.home.indexOf("Real") !== -1) { lh = 2.20; la = 0.90; }
+
+    var M = buildMatrix(lh, la);
+    var flatOdds = [];
+
+    var key = safeStorage.get("fcKey") || $("apiKey").value.trim();
+    if(!key || e.demo || !usingReal){
+      flatOdds = getDemoOddsForMatch(e);
+    } else {
+      try{
+        var b1 = safeStorage.get("fcB1") || $("book1").value;
+        var b2 = safeStorage.get("fcB2") || $("book2").value;
+        var reqBooks = [b1, b2].filter(function(x, i, a){ return x && a.indexOf(x) === i; });
+        var u = new URL(API + "/odds");
+        u.searchParams.set("apiKey", key);
+        u.searchParams.set("eventId", e.id);
+        u.searchParams.set("bookmakers", reqBooks.join(","));
+        var res = await fetch(u);
+        var data = await res.json();
+        flatOdds = flattenOdds(data);
+      }catch(err){
+        flatOdds = getDemoOddsForMatch(e);
+      }
+    }
+
+    var analyzed = [];
+    for(var i = 0; i < flatOdds.length; i++){
+      var r = flatOdds[i];
+      var p = calculateFairProb(r.market, r.sel, r.line, M);
+      if(p && p > 0){
+        var fairOdd = 1 / p;
+        var ev = (p * r.odds) - 1;
+        var diffPerc = ((r.odds / fairOdd) - 1) * 100;
+        var isRealError = (ev >= 0.04 && ev <= 0.60 && p >= 0.48);
+        analyzed.push({
+          book: r.book, market: r.market, sel: r.sel, line: r.line,
+          odds: r.odds, eventUrl: r.eventUrl, p: p, fairOdd: fairOdd,
+          ev: ev, diffPerc: diffPerc, isRealError: isRealError
+        });
+      }
+    }
+
+    var errors = analyzed.filter(function(x){ return x.isRealError; }).sort(function(a,b){ return b.ev - a.ev; });
+    var otherMarkets = analyzed.filter(function(x){ return !x.isRealError; });
+
+    $("aCount").textContent = errors.length + " errori realistici";
+
+    if(!errors.length){
+      $("aErrorsList").innerHTML = '<div style="padding:10px 0;color:var(--muted)">Nessun errore di quota ad alta probabilità rilevato su questo match.</div>';
+    } else {
+      $("aErrorsList").innerHTML = errors.map(function(r, i){
+        var evFormatted = (r.ev * 100).toFixed(1);
+        var diffFormatted = r.diffPerc.toFixed(1);
+        var probFormatted = (r.p * 100).toFixed(1);
+        var targetUrl = r.eventUrl || (r.book.toLowerCase().indexOf("sisal") !== -1 ? "https://www.sisal.it/scommesse-matchpoint" : "https://www.bet365.it");
+
+        return '<div class="error-box">' +
+          '<div class="error-header">' +
+            '<div>' +
+              '<div class="tiny" style="color:var(--good);font-weight:900">ERRORE #' + (i+1) + ' · ' + esc(r.book.toUpperCase()) + '</div>' +
+              '<div style="font-size:18px;font-weight:950;margin-top:2px">' +
+                esc(r.market) + ': <span style="color:var(--accent)">' + esc(r.sel) + (r.line != null ? ' ' + r.line : '') + '</span>' +
+              '</div>' +
+            '</div>' +
+            '<span class="error-badge">+' + evFormatted + '% EV</span>' +
+          '</div>' +
+          '<div class="statgrid" style="margin-top:10px">' +
+            '<div class="stat" style="border-color:var(--error-border)"><span class="tiny">Quota Book</span><b style="font-size:17px;color:var(--good)">' + r.odds.toFixed(2) + '</b></div>' +
+            '<div class="stat"><span class="tiny">Quota Equa</span><b style="font-size:17px">' + r.fairOdd.toFixed(2) + '</b></div>' +
+            '<div class="stat"><span class="tiny">Probabilità Reale</span><b class="good" style="font-size:17px">' + probFormatted + '%</b></div>' +
+            '<div class="stat"><span class="tiny">Sovrapprezzo</span><b class="good">+' + diffFormatted + '%</b></div>' +
+          '</div>' +
+          '<div style="margin-top:10px">' +
+            '<a href="' + esc(targetUrl) + '" target="_blank" rel="noopener noreferrer" class="book-link">Apri e gioca su ' + esc(r.book) + ' ↗</a>' +
+          '</div>' +
+        '</div>';
+      }).join("");
+    }
+
+    $("aAllMarkets").innerHTML = otherMarkets.map(function(r){
+      return '<div class="marketCard"><div class="row">' +
+        '<div><b>' + esc(r.market) + '</b> — <span>' + esc(r.sel) + (r.line != null ? ' ' + r.line : '') + '</span><div class="tiny">' + esc(r.book) + ' · P: ' + (r.p*100).toFixed(0) + '%</div></div>' +
+        '<div style="text-align:right"><b>' + r.odds.toFixed(2) + '</b><div class="tiny">Fair: ' + r.fairOdd.toFixed(2) + '</div></div>' +
+      '</div></div>';
+    }).join("") || '<p class="muted">Nessun altro mercato.</p>';
+  };
+
+  function renderTopView(){
+    var arr = events.filter(inWindow);
+    $("tops").innerHTML = arr.map(function(e){
+      var idx = events.indexOf(e);
+      return '<div class="match" onclick="analyzeMatch(' + idx + ')">' +
+        '<div class="row">' +
+          '<div>' +
+            '<div class="teams">' + esc(e.home) + ' — ' + esc(e.away) + '</div>' +
+            '<div class="time">' + esc(leagueName(e)) + ' · ' + new Date(e.date).toLocaleDateString("it-IT",{hour:"2-digit",minute:"2-digit"}) + '</div>' +
+          '</div>' +
+          '<span class="badge good">Rileva Errori ›</span>' +
+        '</div>' +
+      '</div>';
+    }).join("");
+  }
+
+  function renderMatches(){
+    var q = ($("search").value || "").toLowerCase();
+    var arr = events.filter(inWindow)
+      .filter(function(e){ return !selectedLeague || leagueName(e) === selectedLeague; })
+      .filter(function(e){ return (e.home + " " + e.away).toLowerCase().indexOf(q) !== -1; });
+
+    if(!arr.length){
+      $("matches").innerHTML = '<p class="muted">Nessuna partita trovata per i filtri correnti.</p>';
+      return;
+    }
+
+    var grp = {};
+    for(var i = 0; i < arr.length; i++){
+      var item = arr[i];
+      var lName = leagueName(item);
+      if (!grp[lName]) grp[lName] = [];
+      grp[lName].push(item);
+    }
+
+    var h = "";
+    for(var l in grp){
+      h += '<div class="section-title">' + esc(l) + '</div>';
+      var es = grp[l];
+      for(var j = 0; j < es.length; j++){
+        var e = es[j];
+        var idx = events.indexOf(e);
+        h += '<div class="match" onclick="analyzeMatch(' + idx + ')">' +
+          '<div class="row">' +
+            '<div>' +
+              '<div class="teams">' + esc(e.home) + ' — ' + esc(e.away) + '</div>' +
+              '<div class="time">' + new Date(e.date).toLocaleString("it-IT",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}) + '</div>' +
+            '</div>' +
+            '<span class="badge good">Rileva Errori ›</span>' +
+          '</div>' +
+        '</div>';
+      }
+    }
+    $("matches").innerHTML = h;
+  }
+
+  function renderMenu(){
+    var current = events.filter(inWindow);
+    var counts = {};
+    for(var i = 0; i < current.length; i++){
+      var l = leagueName(current[i]);
+      counts[l] = (counts[l] || 0) + 1;
+    }
+    $("cnt-all").textContent = current.length;
+    $("lg-all").className = "leagueBtn " + (selectedLeague === "" ? "active" : "");
+
+    var names = Object.keys(counts).sort(function(a,b){ return a.localeCompare(b, "it"); });
+    $("leagueMenu").innerHTML = names.map(function(l){
+      return '<button class="leagueBtn ' + (selectedLeague === l ? 'active' : '') + '" type="button" data-league="' + esc(l) + '">' +
+        '<span>' + esc(l) + '</span><span class="leagueCount">' + counts[l] + '</span>' +
+      '</button>';
+    }).join("");
+
+    var btns = $("leagueMenu").querySelectorAll("button");
+    for(var b = 0; b < btns.length; b++){
+      btns[b].addEventListener("click", function(){
+        selectLeague(this.getAttribute("data-league"));
+      });
+    }
+  }
+
+  function renderAll(){
+    renderMenu();
+    renderMatches();
+  }
+
+  async function fetchEventsForBook(book, key){
+    var u = new URL(API + "/events");
+    u.searchParams.set("apiKey", key);
+    u.searchParams.set("sport", "football");
+    u.searchParams.set("bookmaker", book);
+    u.searchParams.set("status", "pending");
+    u.searchParams.set("limit", "500");
+    var r = await fetch(u);
+    var d = await r.json();
+    return Array.isArray(d) ? d : (d.data || d.events || []);
+  }
+
+  async function loadReal(){
+    var key = safeStorage.get("fcKey") || $("apiKey").value.trim();
+    if(!key){
+      events = demoMatches;
+      usingReal = false;
+      $("conn").textContent = "DEMO ATTIVA";
+      $("conn").className = "pill good";
+      $("msg").textContent = "Modalità demo attiva. Clicca su un match per rilevare gli errori.";
+      renderAll();
+      return;
+    }
+
+    $("conn").textContent = "CARICAMENTO...";
+    var b1 = safeStorage.get("fcB1") || $("book1").value;
+    try{
+      var evs = await fetchEventsForBook(b1, key);
+      events = evs;
+      usingReal = true;
+      $("conn").textContent = "DATI REALI";
+      $("conn").className = "pill good";
+      $("msg").textContent = events.length + " partite reali caricate.";
+      renderAll();
+    }catch(err){
+      events = demoMatches;
+      usingReal = false;
+      $("conn").textContent = "ERRORE FEED";
+      $("conn").className = "pill danger";
+      $("msg").textContent = "Errore API (" + err.message + "). Attivata modalità dimostrativa.";
+      renderAll();
+    }
+  }
+
+  // Event Listeners espliciti
+  $("btn-menu").addEventListener("click", openMenu);
+  $("btn-close-side").addEventListener("click", closeMenu);
+  $("overlay").addEventListener("click", closeMenu);
+  $("lg-all").addEventListener("click", function(){ selectLeague(""); });
+  $("btn-toggle-config").addEventListener("click", function(){ $("configSection").classList.toggle("hide"); });
+  $("btn-reload").addEventListener("click", loadReal);
+  $("h24").addEventListener("click", function(){ setHours(24); });
+  $("h48").addEventListener("click", function(){ setHours(48); });
+  $("btn-top-view").addEventListener("click", function(){ setView("top"); });
+  $("btn-back").addEventListener("click", function(){ setView("partite"); });
+  $("nav-partite").addEventListener("click", function(){ setView("partite"); });
+  $("nav-top").addEventListener("click", function(){ setView("top"); });
+  $("search").addEventListener("input", renderMatches);
+
+  $("btn-save-load").addEventListener("click", function(){
+    var k = $("apiKey").value.trim();
+    safeStorage.set("fcKey", k);
+    safeStorage.set("fcB1", $("book1").value);
+    safeStorage.set("fcB2", $("book2").value);
+    loadReal();
+  });
+
+  events = demoMatches;
+  renderAll();
+  if(safeStorage.get("fcKey")) loadReal();
+})();
+</script>
+</body>
+</html>
